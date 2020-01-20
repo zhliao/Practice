@@ -1,18 +1,16 @@
-from __future__ import print_function
-
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import ndimage as ndi
 
-from scipy import ndimage as nd
 from skimage import data
+from skimage.util import img_as_float
 from skimage.filters import gabor_kernel
 
 
 def compute_feats(image, kernels):
     feats = np.zeros((len(kernels), 2), dtype=np.double)
     for k, kernel in enumerate(kernels):
-        filtered = nd.convolve(image, kernel, mode='wrap')
+        filtered = ndi.convolve(image, kernel, mode='wrap')
         feats[k, 0] = filtered.mean()
         feats[k, 1] = filtered.var()
     return feats
@@ -41,9 +39,9 @@ for theta in range(4):
 
 
 shrink = (slice(0, None, 3), slice(0, None, 3))
-brick = data.brick()
-grass = data.grass()
-gravel = data.gravel()
+brick = img_as_float(data.brick())[shrink]
+grass = img_as_float(data.grass())[shrink]
+gravel = img_as_float(data.gravel())[shrink]
 image_names = ('brick', 'grass', 'gravel')
 images = (brick, grass, gravel)
 
@@ -56,23 +54,23 @@ ref_feats[2, :, :] = compute_feats(gravel, kernels)
 print('Rotated images matched against references using Gabor filter banks:')
 
 print('original: brick, rotated: 30deg, match result: ', end='')
-feats = compute_feats(nd.rotate(brick, angle=190, reshape=False), kernels)
+feats = compute_feats(ndi.rotate(brick, angle=190, reshape=False), kernels)
 print(image_names[match(feats, ref_feats)])
 
 print('original: brick, rotated: 70deg, match result: ', end='')
-feats = compute_feats(nd.rotate(brick, angle=70, reshape=False), kernels)
+feats = compute_feats(ndi.rotate(brick, angle=70, reshape=False), kernels)
 print(image_names[match(feats, ref_feats)])
 
 print('original: grass, rotated: 145deg, match result: ', end='')
-feats = compute_feats(nd.rotate(grass, angle=145, reshape=False), kernels)
+feats = compute_feats(ndi.rotate(grass, angle=145, reshape=False), kernels)
 print(image_names[match(feats, ref_feats)])
 
 
 def power(image, kernel):
     # Normalize images for better comparison.
     image = (image - image.mean()) / image.std()
-    return np.sqrt(nd.convolve(image, np.real(kernel), mode='wrap')**2 +
-                   nd.convolve(image, np.imag(kernel), mode='wrap')**2)
+    return np.sqrt(ndi.convolve(image, np.real(kernel), mode='wrap')**2 +
+                   ndi.convolve(image, np.imag(kernel), mode='wrap')**2)
 
 # Plot a selection of the filter bank kernels and their responses.
 results = []
@@ -102,7 +100,7 @@ for label, img, ax in zip(image_names, images, axes[0][1:]):
 for label, (kernel, powers), ax_row in zip(kernel_params, results, axes[1:]):
     # Plot Gabor kernel
     ax = ax_row[0]
-    ax.imshow(np.real(kernel), interpolation='nearest')
+    ax.imshow(np.real(kernel))
     ax.set_ylabel(label, fontsize=7)
     ax.set_xticks([])
     ax.set_yticks([])
